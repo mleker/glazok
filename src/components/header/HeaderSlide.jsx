@@ -424,7 +424,7 @@ export const HeaderSlide = ({ withCategories = true, categories }) => {
                             </a>
                             <a
                                 className={classes.item}
-                                href="https://www.instagram.com/glazok.me"
+                                href="https://www.instagram.com/glazok.tv"
                                 target="blanc">
                                 {'In'}
                             </a>
