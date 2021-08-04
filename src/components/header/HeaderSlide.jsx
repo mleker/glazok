@@ -2,7 +2,7 @@ import React from 'react';
 import { createUseStyles } from 'react-jss';
 import { createHomeUrl, createAboutUrl } from '../../utils/AppUrlCreators';
 import { useHistory } from 'react-router-dom';
-import { ThemeContext, mailchimpUrl, basename } from '../../App';
+import { ThemeContext, mailchimpUrl } from '../../App';
 import { BurgerIcon } from './images/BurgerIcon';
 import { CrossIcon } from './images/CrossIcon';
 import classNames from 'classnames';
@@ -14,7 +14,6 @@ const createHeaderSlideStyles = createUseStyles(() => ({
         zIndex: 2,
         fontSize: 40,
         position: 'relative',
-        paddingBottom: 10,
         flexShrink: 0,
         textTransform: 'uppercase',
         whiteSpace: 'nowrap',
@@ -26,13 +25,19 @@ const createHeaderSlideStyles = createUseStyles(() => ({
         },
     },
 
+    title: {
+        textAlign: 'center',
+    },
+
     blinkers: {
-        animation: '$blinker 1s steps(2, jump-none) infinite',
+        animationName: '$blinker',
+        animationDuration: '1s',
+        animationIterationCount: 'infinite',
+        animationTimingFunction: 'steps(2, start)',
     },
 
     '@keyframes blinker': {
-        from: { opacity: 1 },
-        to: { opacity: 0 }
+        to: { visibility: 'hidden' },
     },
 
     headerWithMenu: ({ background }) => ({
@@ -66,18 +71,15 @@ const createHeaderSlideStyles = createUseStyles(() => ({
         right: 20,
         transform: 'translateY(-50%)',
         stroke: color,
+        marginTop: -3,
     }),
 
     burgerMenu: ({ background }) => ({
-        paddingRight: 20,
-        paddingLeft: 20,
         position: 'fixed',
-        top: 80,
+        top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        width: '100vw',
-        height: '100vh',
         backgroundColor: background,
         textAlign: 'center',
         textTransform: 'uppercase',
@@ -85,7 +87,7 @@ const createHeaderSlideStyles = createUseStyles(() => ({
 
     item: {
         display: 'block',
-        paddingTop: 20,
+        paddingBottom: 20,
         position: 'relative',
     },
 
@@ -96,14 +98,14 @@ const createHeaderSlideStyles = createUseStyles(() => ({
 
     inputWrapper: {
         display: 'flex',
-        paddingTop: 20,
+        paddingBottom: 20,
         justifyContent: 'center',
         position: 'relative',
     },
 
     inputCloseButton: ({ color }) => ({
-        right: 0,
-        bottom: 12,
+        right: 20,
+        bottom: 35,
         position: 'absolute',
         fontSize: 55,
         stroke: color,
@@ -114,14 +116,14 @@ const createHeaderSlideStyles = createUseStyles(() => ({
     },
 
     inputReal: ({ color }) => ({
-        borderBottom: '2px solid white',
+        borderBottom: `2px solid ${color}`,
         width: 220,
         color: color,
     }),
 
     submitButton: ({ color }) => ({
-        right: 0,
-        bottom: -8,
+        right: 20,
+        bottom: 10,
         position: 'absolute',
         fontSize: 55,
         stroke: color,
@@ -159,16 +161,44 @@ const createHeaderSlideStyles = createUseStyles(() => ({
     },
 }));
 
-const replaceSpacesWithUnderscore = (text) => text.replace(/ /g, "_");
+const getTouches = (evt) => evt.touches;
 
-export const HeaderSlide = ({ withArrows = true, categories, initialCurrentItem, onMenuClick }) => {
+export const HeaderSlide = ({ withCategories = true, categories }) => {
     const history = useHistory();
+    const pathname = location.pathname.replace(/\//, '');
     const { theme } = React.useContext(ThemeContext);
     const [menuOpened, setMenuOpened] = React.useState(false);
     const [inputVisible, setInputVisible] = React.useState(false);
     const [inputValue, setInputValue] = React.useState('');
+    const [currentItem, setCurrentItem] = React.useState(0);
+    const [winWidth, setWinWidth] = React.useState(window.innerWidth);
+    const [winHeight, setWinHeight] = React.useState(window.innerHeight);
     const classes = createHeaderSlideStyles({ background: theme.background, color: theme.color });
-    const items = categories && categories.map(obj => obj['name']);
+    let xDown = null;
+    let yDown = null;
+
+    React.useEffect(() => {
+        categories && categories.map((item, i) => {
+            if (item.custom_url === pathname) {
+                setCurrentItem(i)
+            }
+        });
+    }, [categories]);
+
+    React.useEffect(() => {
+        if (location.pathname !== createAboutUrl() && location.pathname !== createHomeUrl() && pathname !== categories[currentItem].custom_url) {
+            categories && categories.map((item, i) => {
+                if (item.custom_url === pathname) {
+                    setCurrentItem(i)
+                }
+            });
+        }
+    }, [location]);
+
+    const handleMenuClick = (i) => {
+        setCurrentItem(i);
+        history.push(categories[i].custom_url);
+    }
 
     const clearAllHandlers = () => {
         setMenuOpened(false);
@@ -177,35 +207,90 @@ export const HeaderSlide = ({ withArrows = true, categories, initialCurrentItem,
     }
 
     const onLeftClick = () => {
-        if (initialCurrentItem === 0) {
-            onMenuClick(categories.length - 1);
-            history.push(categories[categories.length - 1].custom_url);
+        if (currentItem === 0) {
+            handleMenuClick(categories.length - 1);
         } else {
-            onMenuClick(--initialCurrentItem);
-            history.push(categories[initialCurrentItem].custom_url);
+            const newCurrentItem = currentItem - 1;
+            handleMenuClick(newCurrentItem);
         }
     }
 
     const onRightClick = () => {
-        if (initialCurrentItem === categories.length - 1) {
-            onMenuClick(0);
-            history.push(categories[0].custom_url);
+        if (currentItem === categories.length - 1) {
+            handleMenuClick(0);
         } else {
-            onMenuClick(++initialCurrentItem);
-            history.push(categories[initialCurrentItem].custom_url);
+            const newCurrentItem = currentItem + 1;
+            handleMenuClick(newCurrentItem);
         }
     }
 
-    const handleChangeInputValue = (event) => setInputValue(event.target.value);
+    const handleTouchStart = (evt) => {
+        const firstTouch = getTouches(evt)[0];
+        xDown = firstTouch.clientX;
+        yDown = firstTouch.clientY;
+    };
+
+    const handleTouchMove = (evt) => {
+        if (!xDown || !yDown) {
+            return;
+        }
+
+        var xUp = evt.touches[0].clientX;
+        var yUp = evt.touches[0].clientY;
+
+        var xDiff = xDown - xUp;
+        var yDiff = yDown - yUp;
+
+        if (Math.abs(xDiff) > Math.abs(yDiff)) {
+            if (xDiff > 0) {
+                if (currentItem === categories.length - 1) {
+                    setCurrentItem(0);
+                    history.push(categories[0].custom_url);
+                } else {
+                    setCurrentItem(currentItem + 1);
+                    history.push(categories[currentItem + 1].custom_url);
+                }
+            } else {
+                if (currentItem === 0) {
+                    setCurrentItem(categories.length - 1);
+                    history.push(categories[categories.length - 1].custom_url);
+                } else {
+                    setCurrentItem(currentItem - 1);
+                    history.push(categories[currentItem - 1].custom_url);
+                }
+            }
+        }
+
+        xDown = null;
+        yDown = null;
+    };
 
     React.useEffect(() => {
-        history.push(categories[initialCurrentItem].custom_url);
-    }, [initialCurrentItem]);
+        const handleResize = () => {
+            setWinWidth(window.innerWidth);
+            setWinHeight(window.innerHeight);
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        if (winWidth <= global.width3 || winHeight <= global.height2) {
+            window.addEventListener('touchstart', handleTouchStart, false);
+            window.addEventListener('touchmove', handleTouchMove, false);
+        }
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('touchstart', handleTouchStart);
+            window.removeEventListener('touchmove', handleTouchMove);
+        }
+    })
+
+    const handleChangeInputValue = (event) => setInputValue(event.target.value);
 
     return (
         <div className={classNames(classes.header, menuOpened && classes.headerWithMenu)}>
             <div className={classes.cursor}>
-                {!menuOpened && withArrows && (
+                {!menuOpened && withCategories && categories.length > 1 && (
                     <span
                         className={classes.arrow}
                         onClick={onLeftClick}
@@ -216,7 +301,7 @@ export const HeaderSlide = ({ withArrows = true, categories, initialCurrentItem,
                 <span className={classes.bracket}>{"("}</span>
                 <span className={classes.blinkers}>{"༗"}</span>
                 <span className={classes.bracket}>{")"}</span>
-                {!menuOpened && withArrows && (
+                {withCategories && categories.length > 1 && (
                     <span
                         className={classes.arrow}
                         onClick={onRightClick}
@@ -224,35 +309,30 @@ export const HeaderSlide = ({ withArrows = true, categories, initialCurrentItem,
                         {">"}
                     </span>
                 )}
-                {menuOpened
-                    ? (
+                <BurgerIcon
+                    className={classes.menuHandler}
+                    onClick={setMenuOpened}
+                />
+            </div>
+
+            {location.pathname !== createAboutUrl() && (
+                <div className={classes.title}>
+                    {categories[currentItem].name}
+                </div>
+            )}
+
+            {menuOpened && (
+                <div className={classes.burgerMenu}>
+                    <div className={classes.cursor}>
+                        <span className={classes.bracket}>{"("}</span>
+                        <span className={classes.blinkers}>{"༗"}</span>
+                        <span className={classes.bracket}>{")"}</span>
                         <CrossIcon
                             className={classes.menuHandler}
                             onClick={clearAllHandlers}
                         />
-                    ) : (
-                        <BurgerIcon
-                            className={classes.menuHandler}
-                            onClick={setMenuOpened}
-                        />
-                    )}
-            </div>
-
-            {withArrows
-                ? (
-                    <div className={classes.menuItem}>
-                        {items[initialCurrentItem] && replaceSpacesWithUnderscore(items[initialCurrentItem])}
                     </div>
-                ) : (
-                    <div className={classes.menuItem}>
-                        {'ABOUT'}
-                    </div>
-                )
-            }
-
-            {menuOpened && (
-                <div className={classes.burgerMenu}>
-                    {location.pathname === basename + createAboutUrl()
+                    {location.pathname === createAboutUrl()
                         ? (
                             <div
                                 className={classes.item}
@@ -322,7 +402,9 @@ export const HeaderSlide = ({ withArrows = true, categories, initialCurrentItem,
                                     </div>
                                     <div
                                         className={classNames(classes.submitButton, !inputValue || inputValue.indexOf("@") === -1 ? classes.disabledButton : classes.activeButton)}
-                                        onClick={() => subscribe({ EMAIL: inputValue })}
+                                        onClick={() => {
+                                            inputValue && inputValue.indexOf("@") !== -1 && subscribe({ EMAIL: inputValue })
+                                        }}
                                     >
                                         {'>'}
                                     </div>
@@ -342,7 +424,7 @@ export const HeaderSlide = ({ withArrows = true, categories, initialCurrentItem,
                             </a>
                             <a
                                 className={classes.item}
-                                href="https://www.instagram.com/glazok.me"
+                                href="https://www.instagram.com/glazok.tv"
                                 target="blanc">
                                 {'In'}
                             </a>

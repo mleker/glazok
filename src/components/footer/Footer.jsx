@@ -1,21 +1,23 @@
 import React from 'react';
 import { createUseStyles } from 'react-jss';
-import { Link } from '../link/Link';
 import { createAboutUrl, createHomeUrl } from '../../utils/AppUrlCreators';
-import { ThemeContext, mailchimpUrl, basename } from '../../App';
+import { ThemeContext, mailchimpUrl } from '../../App';
 import { useLocation } from 'react-router-dom';
 import MailchimpSubscribe from 'react-mailchimp-subscribe';
 import classNames from 'classnames';
+import { useHistory } from 'react-router-dom';
 
 const createFooterStyles = createUseStyles(() => ({
   footer: ({ color }) => ({
     fontSize: 20,
-    position: 'absolute',
-    bottom: 35,
+    paddingBottom: 30,
+    paddingTop: 10,
     left: '50%',
-    transform: 'translate(-50%)',
+    bottom: 0,
+    margin: '0 auto',
     width: 300,
     color: color,
+    zIndex: 10,
   }),
 
   row: {
@@ -29,7 +31,7 @@ const createFooterStyles = createUseStyles(() => ({
     paddingLeft: 15,
     paddingRight: 15,
     cursor: 'pointer',
-    '&:hover, &:active': {
+    '&:hover': {
       opacity: 0.5,
     },
     borderBottom: `2px solid transparent`,
@@ -42,21 +44,20 @@ const createFooterStyles = createUseStyles(() => ({
 
   input: ({ color }) => ({
     paddingLeft: 15,
-    borderBottom: '2px solid white',
-    marginRight: 20,
+    borderBottom: `2px solid ${color}`,
     width: 200,
     color: color,
   }),
 
-  submitButton: {
-
-  },
-
   disabledButton: {
+    paddingLeft: 20,
+    paddingRight: 20,
     opacity: 0.5,
   },
 
   activeButton: {
+    paddingLeft: 20,
+    paddingRight: 20,
     cursor: 'pointer',
   },
 
@@ -83,39 +84,84 @@ const createFooterStyles = createUseStyles(() => ({
     color: 'green',
   },
 
+  staticFooter: {
+    position: 'static',
+    transform: 'none',
+  },
+
+  absoluteFooter: {
+    position: 'absolute',
+    transform: 'translate(-50%)',
+  },
+
+  [`@media (max-height: ${global.maxHeight}px)`]: {
+    footer: () => ({
+      fontSize: 12,
+      paddingBottom: 10,
+    }),
+
+    inputMsg: {
+      top: 20,
+      fontSize: 8,
+      paddingBottom: 5,
+    },
+
+    errorMsg: {
+      top: 20,
+      fontSize: 8,
+      paddingBottom: 5,
+    },
+  
+    loadingMsg: ({ color }) => ({
+      top: 20,
+      fontSize: 8,
+      paddingBottom: 5,
+    }),
+  
+    successMsg: {
+      top: 20,
+      fontSize: 8,
+      paddingBottom: 5,
+    },
+
+    item: {
+      '&:hover': {
+        opacity: 1,
+      },
+    },
+  },
 }));
 
-const debounce = (fn, ms) => {
-  let timer;
-  return () => {
-    clearTimeout(timer)
-    timer = setTimeout(() => {
-      timer = null
-      fn.apply(this, arguments)
-    }, ms)
-  };
-}
-
-export const Footer = () => {
+export const Footer = ({ positionStatic = false }) => {
+  const history = useHistory();
   const { theme } = React.useContext(ThemeContext);
-  const [winWidth, setWinWidth] = React.useState(window.innerWidth);
   const [inputValue, setInputValue] = React.useState('');
   const [inputVisible, setInputVisible] = React.useState(false);
+  const inputWrapperHtmlEl = React.useRef();
   const classes = createFooterStyles({ color: theme.color, background: theme.background });
   let location = useLocation();
 
   React.useEffect(() => {
-    const debouncedHandleResize = debounce(() => setWinWidth(window.innerWidth), 300);
-    window.addEventListener('resize', debouncedHandleResize);
-    return () => window.removeEventListener('resize', debouncedHandleResize);
-  })
+    window.addEventListener('click', handleClick);
+    return () => {
+      window.removeEventListener('click', handleClick);
+    }
+  });
+
+  React.useEffect(() => {
+    clearAllHandlers();
+  }, []);
+
+  const clearAllHandlers = () => {
+    setInputValue('');
+    setInputVisible(false);
+  }
 
   const handleChangeInputValue = (event) => setInputValue(event.target.value);
-
+  const handleClick = (event) => inputVisible && !inputWrapperHtmlEl.current.contains(event.target) && setInputVisible(false);
 
   return (
-    winWidth > global.maxWidth && (
-      <div className={classes.footer}>
+      <div className={classNames(classes.footer, positionStatic ? classes.staticFooter : classes.absoluteFooter)}>
         <div className={classes.row}>
           <a
             className={classes.item}
@@ -126,7 +172,7 @@ export const Footer = () => {
           </a>
           <a
             className={classes.item}
-            href="https://www.instagram.com/glazok.me"
+            href="https://www.instagram.com/glazok.tv"
             target="blanc">
             {'In'}
           </a>
@@ -151,7 +197,10 @@ export const Footer = () => {
             <MailchimpSubscribe
               url={mailchimpUrl}
               render={({ subscribe, status, message }) => (
-                <div className={classes.inputWrapper}>
+                <div
+                  ref={inputWrapperHtmlEl}
+                  className={classes.inputWrapper}
+                >
                   <input
                     maxLength="40"
                     placeholder={'Your@e.mail'}
@@ -162,7 +211,9 @@ export const Footer = () => {
                   />
                   <div
                     className={classNames(classes.submitButton, !inputValue || inputValue.indexOf("@") === -1 ? classes.disabledButton : classes.activeButton)}
-                    onClick={() => subscribe({ EMAIL: inputValue })}
+                    onClick={() => {
+                      inputValue && inputValue.indexOf("@") !== -1 && subscribe({ EMAIL: inputValue })
+                    }}
                   >
                     {'>'}
                   </div>
@@ -190,12 +241,30 @@ export const Footer = () => {
 
           {!inputVisible && (
             location.pathname === createAboutUrl()
-              ? (<Link className={classes.item} to={createHomeUrl()}>{'Main'}</Link>)
-              : (<Link className={classes.item} to={createAboutUrl()}>{'About'}</Link>)
+              ? (
+                <div
+                  className={classes.item}
+                  onClick={() => {
+                    history.push(createHomeUrl());
+                    clearAllHandlers();
+                  }}
+                >
+                  {'Main'}
+                </div>
+              )
+              : (
+                <div
+                  className={classes.item}
+                  onClick={() => {
+                    history.push(createAboutUrl());
+                    clearAllHandlers();
+                  }}
+                >
+                  {'About'}
+                </div>
+              )
           )}
-
         </div>
       </div>
-    )
   );
 };

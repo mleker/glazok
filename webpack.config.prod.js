@@ -17,7 +17,7 @@ module.exports = () => {
     output: {
       path: BUILD_DIR,
       filename: 'index.bundle.js',
-      publicPath: '/glazok/'
+      publicPath: '/'
     },
     resolve: {
       extensions: ['.js', '.jsx']

@@ -1,8 +1,8 @@
 import React from 'react';
+import 'normalize.css';
 import { jss } from 'react-jss';
 import { RootPage } from './components/root/RootPage';
 import { getCategories, getPosts } from './utils/Api';
-import 'normalize.css';
 import { createHomeUrl } from './utils/AppUrlCreators';
 import PanamaOtf from './fonts/panama.otf';
 import PanamaEot from './fonts/panama.eot';
@@ -19,12 +19,21 @@ require('./assets/favicon-32x32.png');
 require('./assets/mstile-150x150.png');
 require('./assets/safari-pinned-tab.svg');
 require('./assets/share-fb.jpg');
-import { Route, Redirect, Switch } from 'react-router-dom';
+import { Route, Switch } from 'react-router-dom';
 import { Loading } from './components/loading/Loading';
 import { Error } from './components/error/Error';
-import { debounce } from './utils/UtilFuncs';
 
-global.maxWidth = 690;
+global.maxWidth = 1055;
+global.width1 = 812;
+global.width2 = 760;
+global.width3 = 500;
+global.minWidth = 250;
+global.widthSe = 570;
+
+global.maxHeight = 640;
+global.height1 = 550;
+global.height2 = 400;
+global.minHeight = 250;
 
 jss.createStyleSheet({
   '@font-face': {
@@ -44,7 +53,9 @@ jss.createStyleSheet({
 jss.createStyleSheet({
   '@global': {
     html: {
-      height: '100%',
+      height: '100vh',
+      minWidth: global.minWidth,
+      minHeight: global.minHeight,
     },
 
     body: {
@@ -53,14 +64,19 @@ jss.createStyleSheet({
       fontSize: 16,
       lineHeight: 1.2,
       width: '100%',
-      height: '100%',
+      height: '100vh',
       margin: 0,
       padding: 0,
+      minWidth: global.minWidth,
+      minHeight: global.minHeight,
     },
 
     a: {
       all: 'unset',
       color: 'inherit',
+      '&:visited': {
+        color: 'inherit',
+      }
     },
 
     input: {
@@ -75,7 +91,13 @@ jss.createStyleSheet({
     '*': {
       boxSizing: 'border-box',
     },
-  }
+
+    [`@media (max-width: ${global.widthSe}px)`]: {
+      body: {
+        overflow: 'auto',
+      },
+    }
+  },
 }).attach();
 
 export const themes = {
@@ -89,24 +111,28 @@ export const themes = {
   }
 };
 
-export const basename = process.env.NODE_ENV === 'production' ? '/glazok' : '/';
-
 export const ThemeContext = React.createContext(themes.black);
 
 export const mailchimpUrl = '//gmail.us10.list-manage.com/subscribe/post?u=d85f58b233c0f486796471e30&id=6066ed83ae';
 
 export const App = () => {
   const [theme, setTheme] = React.useState(themes.black);
-  const [winWidth, setWinWidth] = React.useState(window.innerWidth);
   const [categories, setCategories] = React.useState(null);
   const [posts, setPosts] = React.useState(null);
   const [error, setError] = React.useState();
 
-  React.useEffect(() => {
-    const debouncedHandleResize = debounce(() => setWinWidth(window.innerWidth), 300);
-    window.addEventListener('resize', debouncedHandleResize);
-    return () => window.removeEventListener('resize', debouncedHandleResize);
-  })
+  let nulls = [];
+  let sortedCategories = categories && categories.slice();
+  sortedCategories && sortedCategories.map(
+    (a, i) => {
+      if (a['priority'] === null) {
+        nulls.push(sortedCategories.splice(i, 1)[0]);
+      }
+    }
+  );
+
+  sortedCategories && sortedCategories.sort((a, b) => a['priority'] > b['priority'] ? 1 : -1);
+  sortedCategories = sortedCategories && nulls && sortedCategories.concat(nulls);
 
   React.useEffect(() => {
     getCategories()
@@ -132,13 +158,12 @@ export const App = () => {
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
-      {categories && posts
+      {sortedCategories && posts
         ? (
           <Switch>
             <Route path={createHomeUrl()}>
-              <RootPage categories={categories} posts={posts} />
+              <RootPage categories={sortedCategories} posts={posts} />
             </Route>
-            <Redirect from={createHomeUrl()} to={categories[0].custom_url} push={true} />
             <Route component={Error} />
           </Switch>
         ) : (

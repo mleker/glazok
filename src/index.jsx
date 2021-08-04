@@ -6,7 +6,7 @@ import { BrowserRouter } from 'react-router-dom';
 
 const render = (Component) =>
   ReactDOM.render(
-    <BrowserRouter basename={process.env.NODE_ENV === 'production' ? '/glazok' : '/'}>
+    <BrowserRouter>
       <AppContainer>
         {Component}
       </AppContainer>
