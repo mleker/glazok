@@ -290,7 +290,7 @@ export const HeaderSlide = ({ withCategories = true, categories }) => {
     return (
         <div className={classNames(classes.header, menuOpened && classes.headerWithMenu)}>
             <div className={classes.cursor}>
-                {!menuOpened && withCategories && (
+                {!menuOpened && withCategories && categories.length > 1 && (
                     <span
                         className={classes.arrow}
                         onClick={onLeftClick}
@@ -301,7 +301,7 @@ export const HeaderSlide = ({ withCategories = true, categories }) => {
                 <span className={classes.bracket}>{"("}</span>
                 <span className={classes.blinkers}>{"༗"}</span>
                 <span className={classes.bracket}>{")"}</span>
-                {withCategories && (
+                {withCategories && categories.length > 1 && (
                     <span
                         className={classes.arrow}
                         onClick={onRightClick}

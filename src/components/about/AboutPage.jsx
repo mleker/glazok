@@ -223,7 +223,7 @@ export const AboutPage = () => {
                 </div>
                 <br />
                 <br />
-                {'It is best to use Safari and Google Chrome browsers for watching glazok on computers. Safari is best suited for mobile devices.'}
+                {'It is best to use Safari and Google Chrome for watching glazok on computers. Safari is best suited for mobile devices.'}
                 <br />
                 <br />
                 {'The site may feature сontent that is not suitable for anyone under the age of 18.'}
@@ -331,7 +331,7 @@ export const AboutPage = () => {
             </div>
             <br />
             <br />
-            {'It is best to use Safari and Google Chrome browsers for watching glazok on computers. Safari is best suited for mobile devices.'}
+            {'It is best to use Safari and Google Chrome for watching glazok on computers. Safari is best suited for mobile devices.'}
             <br />
             <br />
             {'The site may feature сontent that is not suitable for anyone under the age of 18.'}
