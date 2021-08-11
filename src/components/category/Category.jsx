@@ -422,7 +422,7 @@ const createCategoryStyles = createUseStyles(() => ({
 
 }));
 
-export const Category = ({ category, post, readMode, onSetReadMode, onSetPlayMode }) => {
+export const Category = ({ post, readMode, onSetReadMode, onSetPlayMode }) => {
   const { theme, setTheme } = React.useContext(ThemeContext);
   const [winWidth, setWinWidth] = React.useState(window.innerWidth);
   const [winHeight, setWinHeight] = React.useState(window.innerHeight);

@@ -133,26 +133,30 @@ export const HeaderScroll = ({ categories }) => {
   let yDown = null;
 
   React.useEffect(() => {
-    categories && categories.map((item, i) => {
-      if (item.custom_url === pathname) {
-        setCurrentItem(i)
-      }
-    });
-  }, [categories]);
+    if (history.location.state) {
+      history.replace(history.location.pathname, undefined);
+    }
+  }, []);
 
   React.useEffect(() => {
     if (location.pathname !== createAboutUrl() && location.pathname !== createHomeUrl() && pathname !== categories[currentItem].custom_url) {
       categories && categories.map((item, i) => {
         if (item.custom_url === pathname) {
-          setCurrentItem(i)
+          setCurrentItem(i);
         }
       });
     }
   }, [location]);
 
+  React.useEffect(() => {
+    if (!history.location.state) {
+      handleSetScroll(currentItem);
+    };
+  }, [currentItem])
+
   const handleMenuClick = (i) => {
     setCurrentItem(i);
-    history.push(categories[i].custom_url);
+    history.push(categories[i].custom_url, 'local');
   }
 
   const handleSetScroll = (i) => {
@@ -188,14 +192,18 @@ export const HeaderScroll = ({ categories }) => {
       if (xDiff > 0) {
         if (currentItem === categories.length - 1) {
           handleMenuClick(0);
+          handleSetScroll(0);
         } else {
           handleMenuClick(currentItem + 1);
+          handleSetScroll(currentItem + 1);
         }
       } else {
         if (currentItem === 0) {
           handleMenuClick(categories.length - 1);
+          handleSetScroll(categories.length - 1);
         } else {
           handleMenuClick(currentItem - 1);
+          handleSetScroll(currentItem - 1);
         }
       }
     }
@@ -234,12 +242,6 @@ export const HeaderScroll = ({ categories }) => {
     setMenuRightIndent(winWidth / 2 - menuHtmlEls.current[Object.keys(menuHtmlEls.current).length - 1].offsetWidth / 2 - 30);
     handleSetScroll(currentItem);
   }, [winWidth, winHeight])
-
-  React.useEffect(() => {
-    if (winWidth <= global.width3 || winHeight <= global.height2) {
-      handleSetScroll(currentItem);
-    }
-  }, [currentItem])
 
   const classes = createHeaderScrollStyles({ menuLeftIndent, menuRightIndent, background: theme.background, color: theme.color });
   const items = categories && categories.map(obj => obj['name']);
